@@ -1,0 +1,146 @@
+package jogo;
+
+import java.util.Random;
+import java.util.Scanner;
+
+public class BatalhaNaval {
+    private static final int TAMANHO_TABULEIRO = 5;
+    private static final char AGUA = '~';
+    private static final char ACERTO = 'X';
+    private static final char[] NAVIOS = {'P', 'D', 'S'};
+    private static final int[] QUANTIDADES_NAVIOS = {4, 5, 6};
+    
+    private char[][] tabuleiroJogador = new char[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO];
+    private char[][] tabuleiroComputador = new char[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO];
+    private int objetosRestantesJogador = 15;
+    private int objetosRestantesComputador = 15;
+    private String nomeJogador;
+    private Scanner scanner;
+
+    public BatalhaNaval(Scanner scanner) {
+        this.scanner = scanner;
+        inicializarTabuleiros();
+        distribuirNavios(tabuleiroJogador);
+        distribuirNavios(tabuleiroComputador);
+        System.out.print("Digite o nome do jogador: ");
+        this.nomeJogador = scanner.nextLine();
+    }
+
+    private void inicializarTabuleiros() {
+        for (int i = 0; i < TAMANHO_TABULEIRO; i++) {
+            for (int j = 0; j < TAMANHO_TABULEIRO; j++) {
+                tabuleiroJogador[i][j] = AGUA;
+                tabuleiroComputador[i][j] = AGUA;
+            }
+        }
+    }
+
+    private void distribuirNavios(char[][] tabuleiro) {
+        Random random = new Random();
+        for (int i = 0; i < NAVIOS.length; i++) {
+            char tipoNavio = NAVIOS[i];
+            int quantidade = QUANTIDADES_NAVIOS[i];
+            
+            while (quantidade > 0) {
+                int x = random.nextInt(TAMANHO_TABULEIRO);
+                int y = random.nextInt(TAMANHO_TABULEIRO);
+                
+                if (tabuleiro[x][y] == AGUA) {
+                    tabuleiro[x][y] = tipoNavio;
+                    quantidade--;
+                }
+            }
+        }
+    }
+
+    private void mostrarTabuleiro(char[][] tabuleiro, boolean revelar) {
+        System.out.println("   A B C D E");
+        for (int i = 0; i < TAMANHO_TABULEIRO; i++) {
+            System.out.print((i + 1) + "  ");
+            for (int j = 0; j < TAMANHO_TABULEIRO; j++) {
+                char c = tabuleiro[i][j];
+                System.out.print((!revelar && (c == 'P' || c == 'D' || c == 'S')) ? "~ " : c + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    private boolean atirar(char[][] tabuleiro, int x, int y) {
+        if (tabuleiro[x][y] == AGUA) {
+            tabuleiro[x][y] = ACERTO;
+            System.out.println("Acertou a água!");
+            return false;
+        } else if (tabuleiro[x][y] != ACERTO) {
+            System.out.println("Acertou um navio!");
+            tabuleiro[x][y] = ACERTO;
+            return true;
+        }
+        System.out.println("Você já atirou aqui!");
+        return false;
+    }
+
+    private void jogadorAtirar() {
+        int linha, coluna;
+        do {
+            System.out.print("Linha (1 a 5): ");
+            linha = scanner.nextInt() - 1;
+            System.out.print("Coluna (A a E): ");
+            coluna = scanner.next().toUpperCase().charAt(0) - 'A';
+        } while (linha < 0 || linha >= TAMANHO_TABULEIRO || coluna < 0 || coluna >= TAMANHO_TABULEIRO);
+
+        if (atirar(tabuleiroComputador, linha, coluna)) {
+            objetosRestantesComputador--;
+        }
+    }
+
+    private void computadorAtirar() {
+        Random random = new Random();
+        int linha, coluna;
+        do {
+            linha = random.nextInt(TAMANHO_TABULEIRO);
+            coluna = random.nextInt(TAMANHO_TABULEIRO);
+        } while (tabuleiroJogador[linha][coluna] == ACERTO);
+        
+        if (atirar(tabuleiroJogador, linha, coluna)) {
+            objetosRestantesJogador--;
+        }
+    }
+
+    public void jogar() {
+        while (objetosRestantesJogador > 0 && objetosRestantesComputador > 0) {
+            System.out.println("\nSeu tabuleiro:");
+            mostrarTabuleiro(tabuleiroJogador, true);
+            System.out.println("\nTabuleiro do Computador:");
+            mostrarTabuleiro(tabuleiroComputador, false);
+
+            jogadorAtirar();
+            if (objetosRestantesComputador == 0) {
+                System.out.println("Parabéns, " + nomeJogador + "! Você venceu!");
+                break;
+            }
+
+            computadorAtirar();
+            if (objetosRestantesJogador == 0) {
+                System.out.println("O computador venceu! Tente novamente, " + nomeJogador + ".");
+                break;
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        try (Scanner scanner = new Scanner(System.in)) {
+            BatalhaNaval jogo = new BatalhaNaval(scanner);
+            while (true) {
+                System.out.println("\n1. Jogar\n2. Sair");
+                int opcao = scanner.nextInt();
+                if (opcao == 1) {
+                    jogo.jogar();
+                    jogo = new BatalhaNaval(scanner);
+                } else {
+                    System.out.println("Obrigado por jogar!");
+                    break;
+                }
+            }
+        }
+    }
+}
